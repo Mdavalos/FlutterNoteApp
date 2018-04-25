@@ -41,6 +41,8 @@ var noteList = new List();
 
 final NoteStorage storage = new NoteStorage();
 String fileName = "";
+String fullFileName = "";
+bool newNote = false;
 
 class NoteStorage {
   Future<String> get _localPath async {
@@ -51,7 +53,7 @@ class NoteStorage {
 
   Future<File> get _localFile async {
     final path = await _localPath;
-    return new File('$path/$fileName.txt');
+    return new File('$path/$fullFileName.txt');
   }
 
   Future<String> readData() async {
@@ -84,11 +86,15 @@ class NoteStorage {
   Future<File> renameData(String name) async {
     final oldFile = await _localFile;
     final newFile = await _localPath;
-    print("Renaming" + oldFile.toString() + " to $newFile/$name.txt");
-    // Write the file
-    return oldFile.rename("$newFile/$name.txt");
+    print("Renaming" +
+        oldFile.toString() +
+        "to $newFile/$name${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [" +
+        "${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}].txt");
+    // Rename the file
+    return oldFile.rename(
+        "$newFile/$name${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [" +
+            "${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}].txt");
   }
-  
 }
 
 class Notes extends StatefulWidget {
@@ -131,13 +137,11 @@ class _NotesState extends State<Notes> {
         backgroundColor: Colors.yellow[100],
         appBar: new AppBar(
           title: new Text(DemoLocalizations.of(context).titleNote),
-          // title: new Text('Notes'),
           actions: <Widget>[
             new IconButton(
               icon: new Icon(Icons.add),
-              // onPressed: () => _openNotes("New Note"),
-              onPressed: () =>
-                  _openNotes(DemoLocalizations.of(context).newNote.toString()),
+              onPressed: () => _openNotes(
+                  DemoLocalizations.of(context).newNote.toString(),'', true),
             )
           ],
         ),
@@ -157,7 +161,8 @@ class _NotesState extends State<Notes> {
   Widget _buildRow(int i, BuildContext context) {
     var t = noteList[i].toString().split('/');
     var noteName = t[t.length - 1];
-    var newName = noteName.substring(0, noteName.length - 5);
+    var newName = noteName.substring(0, noteName.length - 26);
+    var fullName = noteName.substring(0, noteName.length - 5);
     return new Dismissible(
         background: new Opacity(
           child: new Container(color: Colors.red),
@@ -174,29 +179,43 @@ class _NotesState extends State<Notes> {
                   ),
             child: new ListTile(
               title: new Text(newName),
+              subtitle: new Text('Last Updated: ' +
+                  noteName.substring(
+                      noteName.length - 26, noteName.length - 5)),
               onTap: () {
-                _openNotes(newName);
+                _openNotes(newName,fullName, false);
               },
             )),
         key: new Key(newName),
         onDismissed: (direction) {
           noteList.removeAt(i);
-          _prepareDelete(newName);
-          Scaffold.of(context).showSnackBar(
-              new SnackBar(content: new Text("$newName was deleted"),));
+          _prepareDelete(fullName);
+          Scaffold.of(context).showSnackBar(new SnackBar(
+                content: new Text("$newName was deleted"),
+              ));
         });
   }
 
   Future _prepareDelete(String name) async {
     setState(() {
-      fileName = name;
+      fullFileName = name;
     });
     storage.deleteData().then((_) => _reloadData());
   }
 
-  Future _openNotes(String name) async {
+  Future _openNotes(String name, String fullName, bool state) async {
     setState(() {
-      fileName = name;
+      fileName =
+          name; 
+      if (state) {
+        setState(() {
+          fullFileName = name +
+          '${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]';
+        });
+      } else {
+        fullFileName = fullName;
+      }
+      newNote = state;
     });
     Navigator.push(
       context,
@@ -221,37 +240,32 @@ class _NotesDemoState extends State<NotesDemo> {
   @override
   void initState() {
     super.initState();
-      storage.readData().then((String value) {
-        setState(() {
-          _controller.text = value;
-          _controller2.text = fileName;
-        });
-      }).then((_) => _saveDataStart());
-    // }
+    storage.readData().then((String value) {
+      setState(() {
+        _controller.text = value;
+        _controller2.text = fileName;
+        print(fullFileName);
+      });
+    }).then((_) => _saveDataStart());
   }
 
   Future<File> _saveDataStart() async {
-    if (fileName == DemoLocalizations.of(context).newNote.toString()) {
+    if (newNote) {
       setState(() {
-      _controller2.text = fileName;
-    });
-    // write the variable as a string to the file
-    return storage.writeData(result);
+        _controller2.text = fileName;
+        });
+      // write the variable as a string to the file
+      return storage.writeData(result);
     } else {
       return null;
     }
   }
 
-  Future<File> _saveData() async {
+  Future<File> _saveData(bool fullSave) async {
     setState(() {
-      // if (_controller2.text == "New Note") {
-      if (_controller2.text == DemoLocalizations.of(context).newNote) {
-        _renameData(
-            "${DemoLocalizations.of(context).newNote} ${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [" +
-                "${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]");
-        _controller2.text = fileName;
-      } else {
+      if (fullSave) {
         fileName = _controller2.text;
+        _renameData(fileName).then((_) => _updateFileName());
       }
     });
     // write the variable as a string to the file
@@ -264,6 +278,9 @@ class _NotesDemoState extends State<NotesDemo> {
 
   Future<File> _updateFileName() async => setState(() {
         fileName = _controller2.text;
+        fullFileName = fileName +
+            '${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]';
+        print(fullFileName);
       });
 
   Future<Null> _reloadData() async {
@@ -286,17 +303,12 @@ class _NotesDemoState extends State<NotesDemo> {
         leading: new IconButton(
           icon: new Icon(Icons.arrow_back),
           onPressed: () {
-            if (_controller2.text == '') {
-              _renameData(
-                  "${DemoLocalizations.of(context).untitledNote} ${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()} [" +
-                      "${DateTime.now().hour.toString()}.${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]");
-            }
-            _saveData()
+            _saveData(true)
                 .then((name) => _reloadData())
                 .then((value) => Navigator.pop(context));
           },
         ),
-        title: new Text('$fileName'),
+        title: new Text(_controller2.text),
       ),
       body: new GestureDetector(
         onTap: () => FocusScope.of(context).requestFocus(new FocusNode()),
@@ -311,11 +323,11 @@ class _NotesDemoState extends State<NotesDemo> {
                 keyboardType: TextInputType.text,
                 decoration: new InputDecoration(
                   hintText: DemoLocalizations.of(context).noteTitle,
-                  // hintText: "Title",
                   isDense: false,
                 ),
                 onChanged: (String str) {
-                  title = str;
+                  title =
+                      str; 
                   _renameData(title).then((_) => _updateFileName());
                 },
               ),
@@ -327,12 +339,11 @@ class _NotesDemoState extends State<NotesDemo> {
                 keyboardType: TextInputType.text,
                 decoration: new InputDecoration(
                   hintText: DemoLocalizations.of(context).hintTextNote,
-                  // hintText: "Type Your Notes Here",
                   isDense: false,
                 ),
                 onChanged: (String str) {
                   result = str;
-                  _saveData();
+                  _saveData(false);
                 },
               ),
             ],
