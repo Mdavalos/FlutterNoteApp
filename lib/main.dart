@@ -37,14 +37,15 @@ void main() {
   );
 }
 
+// variables to use for Note app
 var noteList = new List();
-
 final NoteStorage storage = new NoteStorage();
 String fileName = "";
 String fullFileName = "";
 bool newNote = false;
 
 class NoteStorage {
+  // get the path where the notes are stored
   Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
     noteList = directory.listSync();
@@ -52,6 +53,7 @@ class NoteStorage {
   }
 
   Future<File> get _localFile async {
+    // get the full file name path
     final path = await _localPath;
     return new File('$path/$fullFileName.txt');
   }
@@ -59,7 +61,6 @@ class NoteStorage {
   Future<String> readData() async {
     try {
       final file = await _localFile;
-
       // Read the file
       String contents = await file.readAsString();
       return contents;
@@ -70,6 +71,7 @@ class NoteStorage {
   }
 
   Future<File> writeData(String note) async {
+    //write the contents of the notes to the file
     final file = await _localFile;
     // Write the file
     return file.writeAsString('$note');
@@ -84,6 +86,7 @@ class NoteStorage {
   }
 
   Future<File> renameData(String name) async {
+    // rename the file when updating the title or just clicking on an existing note
     final oldFile = await _localFile;
     final newFile = await _localPath;
     print("Renaming" +
@@ -116,6 +119,7 @@ class _NotesState extends State<Notes> {
   }
 
   Future<Null> _reloadData() async {
+    // reload the list when either renaming, deleting, or adding a note
     final directory = await getApplicationDocumentsDirectory();
     var temp = directory.listSync();
     temp.sort((a, b) =>
@@ -128,6 +132,7 @@ class _NotesState extends State<Notes> {
   @override
   void initState() {
     super.initState();
+    // load all the notes in the directory into a list
     _loadData();
   }
 
@@ -140,12 +145,13 @@ class _NotesState extends State<Notes> {
           actions: <Widget>[
             new IconButton(
               icon: new Icon(Icons.add),
+              // create a new note when pressed
               onPressed: () => _openNotes(
                   DemoLocalizations.of(context).newNote.toString(),'', true),
             )
           ],
         ),
-        body: new RefreshIndicator(
+        body: new RefreshIndicator( //pull down to refresh the list in case somehting doesn't update right away
           child:
               // body:
               new ListView.builder(
@@ -159,6 +165,9 @@ class _NotesState extends State<Notes> {
   }
 
   Widget _buildRow(int i, BuildContext context) {
+    // get the filename and split it into the
+    // fullName which includes the date
+    // and newName which is just the title
     var t = noteList[i].toString().split('/');
     var noteName = t[t.length - 1];
     var newName = noteName.substring(0, noteName.length - 26);
@@ -170,7 +179,7 @@ class _NotesState extends State<Notes> {
         ),
         child: new Container(
             height: 75.0,
-            decoration: (i + 1) == noteList.length
+            decoration: (i + 1) == noteList.length //create a black bottom border unless it is the last item
                 ? null
                 : const BoxDecoration(
                     border: const Border(
@@ -181,7 +190,7 @@ class _NotesState extends State<Notes> {
               title: new Text(newName),
               subtitle: new Text('Last Updated: ' +
                   noteName.substring(
-                      noteName.length - 26, noteName.length - 5)),
+                      noteName.length - 26, noteName.length - 5)),  //show when the note was last opened
               onTap: () {
                 _openNotes(newName,fullName, false);
               },
@@ -191,12 +200,13 @@ class _NotesState extends State<Notes> {
           noteList.removeAt(i);
           _prepareDelete(fullName);
           Scaffold.of(context).showSnackBar(new SnackBar(
-                content: new Text("$newName was deleted"),
+                content: new Text("$newName was deleted"), //show a snack bar with what was deleted
               ));
         });
   }
 
   Future _prepareDelete(String name) async {
+    // get ready to delete the file by getting the fullpath name with the date
     setState(() {
       fullFileName = name;
     });
@@ -207,12 +217,12 @@ class _NotesState extends State<Notes> {
     setState(() {
       fileName =
           name; 
-      if (state) {
+      if (state) {  //create a fullFileName if it is a new note
         setState(() {
           fullFileName = name +
           '${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]';
         });
-      } else {
+      } else {  //set the name to the fullFileNme
         fullFileName = fullName;
       }
       newNote = state;
@@ -240,7 +250,7 @@ class _NotesDemoState extends State<NotesDemo> {
   @override
   void initState() {
     super.initState();
-    storage.readData().then((String value) {
+    storage.readData().then((String value) { // get the title and contents of the note to display
       setState(() {
         _controller.text = value;
         _controller2.text = fileName;
@@ -250,7 +260,7 @@ class _NotesDemoState extends State<NotesDemo> {
   }
 
   Future<File> _saveDataStart() async {
-    if (newNote) {
+    if (newNote) {  // if new note create a filename
       setState(() {
         _controller2.text = fileName;
         });
@@ -263,7 +273,7 @@ class _NotesDemoState extends State<NotesDemo> {
 
   Future<File> _saveData(bool fullSave) async {
     setState(() {
-      if (fullSave) {
+      if (fullSave) {   //need to rename the file because the name has changed
         fileName = _controller2.text;
         _renameData(fileName).then((_) => _updateFileName());
       }
@@ -277,6 +287,7 @@ class _NotesDemoState extends State<NotesDemo> {
   }
 
   Future<File> _updateFileName() async => setState(() {
+    // update the file with the updated time after renaming the title
         fileName = _controller2.text;
         fullFileName = fileName +
             '${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]';
@@ -284,6 +295,7 @@ class _NotesDemoState extends State<NotesDemo> {
       });
 
   Future<Null> _reloadData() async {
+    //reload the list so if something has been deleted, added, or renamed
     final directory = await getApplicationDocumentsDirectory();
     var temp = directory.listSync();
     temp.sort((a, b) =>
@@ -303,7 +315,7 @@ class _NotesDemoState extends State<NotesDemo> {
         leading: new IconButton(
           icon: new Icon(Icons.arrow_back),
           onPressed: () {
-            _saveData(true)
+            _saveData(true) // true is passed because the title will need to updated with an updated time (and title if necessary)
                 .then((name) => _reloadData())
                 .then((value) => Navigator.pop(context));
           },
@@ -325,7 +337,7 @@ class _NotesDemoState extends State<NotesDemo> {
                   hintText: DemoLocalizations.of(context).noteTitle,
                   isDense: false,
                 ),
-                onChanged: (String str) {
+                onChanged: (String str) {   // change the fileName if title changed
                   title =
                       str; 
                   _renameData(title).then((_) => _updateFileName());
@@ -341,9 +353,9 @@ class _NotesDemoState extends State<NotesDemo> {
                   hintText: DemoLocalizations.of(context).hintTextNote,
                   isDense: false,
                 ),
-                onChanged: (String str) {
+                onChanged: (String str) { //keep writing the contents of the note to the file so no need to manually save
                   result = str;
-                  _saveData(false);
+                  _saveData(false); //do not need to rename the file so false is passed
                 },
               ),
             ],
