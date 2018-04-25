@@ -79,8 +79,7 @@ class NoteStorage {
 
   Future<File> deleteData() async {
     final file = await _localFile;
-    print("Deleting" + file.path);
-    print("Old ${noteList.length}");
+    // print("Deleting" + file.path);
     // Write the file
     return file.delete();
   }
@@ -89,14 +88,14 @@ class NoteStorage {
     // rename the file when updating the title or just clicking on an existing note
     final oldFile = await _localFile;
     final newFile = await _localPath;
-    print("Renaming" +
-        oldFile.toString() +
-        "to $newFile/$name${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [" +
-        "${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}].txt");
+    // print("Renaming" +
+    //     oldFile.toString() +
+    //     "to $newFile/$name${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [" +
+    //     "${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}].txt");
     // Rename the file
     return oldFile.rename(
-        "$newFile/$name${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [" +
-            "${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}].txt");
+        "$newFile/$name${DateTime.now().year.toString()}-${DateTime.now().month.toString().padLeft(2,'0')}-${DateTime.now().day.toString().padLeft(2,'0')} [" +
+            "${DateTime.now().hour.toString().padLeft(2,'0')}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}].txt");
   }
 }
 
@@ -139,8 +138,9 @@ class _NotesState extends State<Notes> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        backgroundColor: Colors.yellow[100],
+        backgroundColor: const Color.fromARGB(255, 241, 232, 220),
         appBar: new AppBar(
+          backgroundColor: Colors.deepPurple,
           title: new Text(DemoLocalizations.of(context).titleNote),
           actions: <Widget>[
             new IconButton(
@@ -200,7 +200,8 @@ class _NotesState extends State<Notes> {
           noteList.removeAt(i);
           _prepareDelete(fullName);
           Scaffold.of(context).showSnackBar(new SnackBar(
-                content: new Text("$newName was deleted"), //show a snack bar with what was deleted
+                content: new Text("$newName ${DemoLocalizations.of(context).deleteNote}"),
+                duration: new Duration(milliseconds: 500), //show a snack bar with what was deleted
               ));
         });
   }
@@ -220,7 +221,7 @@ class _NotesState extends State<Notes> {
       if (state) {  //create a fullFileName if it is a new note
         setState(() {
           fullFileName = name +
-          '${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]';
+          '${DateTime.now().year.toString()}-${DateTime.now().month.toString().padLeft(2,'0')}-${DateTime.now().day.toString().padLeft(2,'0')} [${DateTime.now().hour.toString().padLeft(2,'0')}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]';
         });
       } else {  //set the name to the fullFileNme
         fullFileName = fullName;
@@ -254,7 +255,6 @@ class _NotesDemoState extends State<NotesDemo> {
       setState(() {
         _controller.text = value;
         _controller2.text = fileName;
-        print(fullFileName);
       });
     }).then((_) => _saveDataStart());
   }
@@ -289,9 +289,8 @@ class _NotesDemoState extends State<NotesDemo> {
   Future<File> _updateFileName() async => setState(() {
     // update the file with the updated time after renaming the title
         fileName = _controller2.text;
-        fullFileName = fileName +
-            '${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}  [${DateTime.now().hour.toString()}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]';
-        print(fullFileName);
+        fullFileName = fileName + 
+            '${DateTime.now().year.toString()}-${DateTime.now().month.toString().padLeft(2,'0')}-${DateTime.now().day.toString().padLeft(2,'0')} [${DateTime.now().hour.toString().padLeft(2,'0')}:${DateTime.now().minute.toString().padLeft(2,'0')}.${DateTime.now().second.toString().padLeft(2,'0')}]';
       });
 
   Future<Null> _reloadData() async {
@@ -310,7 +309,9 @@ class _NotesDemoState extends State<NotesDemo> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
+      backgroundColor: const Color.fromARGB(255, 241, 232, 220),
       appBar: new AppBar(
+        backgroundColor: Colors.deepPurple,
         automaticallyImplyLeading: false,
         leading: new IconButton(
           icon: new Icon(Icons.arrow_back),

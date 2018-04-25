@@ -17,7 +17,8 @@ class DemoLocalizations {
       'untitledNote':
           'Untitled Note',
       'hintTextNote': 'Type your notes here',
-      'noteTitle': 'Title'
+      'noteTitle': 'Title',
+      'deleteNote': 'was deleted'
     },
     'es': {
       'titleNote': 'Notas',
@@ -25,7 +26,8 @@ class DemoLocalizations {
       'untitledNote':
           'Nota Sin Título',
       'hintTextNote': 'Escribir sus notas aquí',
-      'noteTitle': 'Título'
+      'noteTitle': 'Título',
+      'deleteNote': 'fue borrado'
     },
   };
   String get titleNote {
@@ -50,6 +52,9 @@ class DemoLocalizations {
 
   String get noteTitle {
     return _localizedValues[locale.languageCode]['noteTitle'];
+  }
+  String get deleteNote {
+    return _localizedValues[locale.languageCode]['deleteNote'];
   }
 }
 
