@@ -151,7 +151,12 @@ class _NotesState extends State<Notes> {
             )
           ],
         ),
-        body: new RefreshIndicator( //pull down to refresh the list in case somehting doesn't update right away
+        body: noteList.length == 0 ? new Container(
+          padding: const EdgeInsets.only(top: 20.0),
+          alignment: Alignment.topCenter,
+          child: new Text(DemoLocalizations.of(context).notesNone),
+        ) :
+        new RefreshIndicator( //pull down to refresh the list in case somehting doesn't update right away
           child:
               // body:
               new ListView.builder(
