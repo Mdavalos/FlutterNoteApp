@@ -195,7 +195,7 @@ class _NotesState extends State<Notes> {
                 _openNotes(newName,fullName, false);
               },
             )),
-        key: new Key(newName),
+        key: new ObjectKey(newName),
         onDismissed: (direction) {
           noteList.removeAt(i);
           _prepareDelete(fullName);
